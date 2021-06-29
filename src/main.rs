@@ -22,8 +22,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .wrap(cors)
             .app_data(modules.clone())
-            .service(hello)
-            .service(calculate_fptp)
+            .service(web::scope("/borda/").service(hello).service(calculate_fptp))
     })
     .bind("0.0.0.0:8103")?
     .run()
