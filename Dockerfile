@@ -18,7 +18,7 @@ RUN apt-get update \
     && apt-get install -y ca-certificates tzdata \
     && rm -rf /var/lib/apt/lists/*
 
-EXPOSE 8103
+EXPOSE 8381
 
 ENV TZ=Etc/UTC \
     APP_USER=appuser

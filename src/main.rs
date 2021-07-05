@@ -9,7 +9,7 @@ use vote::rpc::{JsonRPCRequest, JsonRPCResponse};
 type ModuleMap = Mutex<HashMap<String, String>>;
 
 const MODULE_NAME: &str = "/borda";
-const PORT: &str = "8103";
+const PORT: &str = "8381";
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
