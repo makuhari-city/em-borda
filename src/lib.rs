@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use uuid::Uuid;
-use vote::VoteInfo;
+use vote::VoteData;
 
 type BordaResult = Vec<(Uuid, u32)>;
 
@@ -10,7 +10,7 @@ type BordaResult = Vec<(Uuid, u32)>;
 /// If people do not give any number to a policy, the map will not contain that entry. In this type
 /// of borda count, those entries will be 'counted down', in other terms, the borda count value
 /// will be 0.
-pub async fn calculate(info: VoteInfo) -> BordaResult {
+pub async fn calculate(info: VoteData) -> BordaResult {
     let mut result: HashMap<Uuid, u32> = info
         .policies
         .iter()
@@ -85,7 +85,7 @@ mod borda_test {
 }
 "#;
 
-        let info: VoteInfo = serde_json::from_slice(json_data).unwrap();
+        let info: VoteData = serde_json::from_slice(json_data).unwrap();
         let result = calculate(info).await;
         let winner: Uuid = Uuid::parse_str("0f18b644-3789-4194-9a98-0e08040395b7").unwrap();
         assert_eq!(result[0].0, winner);
@@ -119,7 +119,7 @@ mod borda_test {
 }
 "#;
 
-        let info: VoteInfo = serde_json::from_slice(json_data).unwrap();
+        let info: VoteData = serde_json::from_slice(json_data).unwrap();
         let result = calculate(info).await;
         let winner: Uuid = Uuid::parse_str("0f18b644-3789-4194-9a98-0e08040395b7").unwrap();
         assert_eq!(result[0].0, winner);
@@ -152,7 +152,7 @@ mod borda_test {
 }
 "#;
 
-        let info: VoteInfo = serde_json::from_slice(json_data).unwrap();
+        let info: VoteData = serde_json::from_slice(json_data).unwrap();
         let result = calculate(info).await;
         let winner: Uuid = Uuid::parse_str("0f18b644-3789-4194-9a98-0e08040395b7").unwrap();
         assert_eq!(result[0].0, winner);
@@ -178,7 +178,7 @@ mod borda_test {
 }
 "#;
 
-        let info: VoteInfo = serde_json::from_slice(json_data).unwrap();
+        let info: VoteData = serde_json::from_slice(json_data).unwrap();
         let result = calculate(info).await;
         assert_eq!(result[0].1, result[1].1);
     }
@@ -205,7 +205,7 @@ mod borda_test {
 }
 "#;
 
-        let info: VoteInfo = serde_json::from_slice(json_data).unwrap();
+        let info: VoteData = serde_json::from_slice(json_data).unwrap();
         let result = calculate(info).await;
         assert_eq!(result[0].1, result[1].1);
     }
