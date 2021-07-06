@@ -1,0 +1,14 @@
+version: "3"
+services: 
+  borda: 
+    build:
+      context: .
+      dockerfile: Dockerfile
+    tty: true 
+    ports:
+      - 8381:8381
+    networks:
+      - makuhari_city
+networks:
+  makuhari_city:
+    external: true
