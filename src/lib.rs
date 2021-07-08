@@ -1,56 +1,45 @@
+mod borda;
+
+pub use borda::BordaCount::calculate;
 use std::collections::HashMap;
 use uuid::Uuid;
 use vote::VoteData;
+use actix_cors::Cors;
+use actix_web::{HttpServer, middleware, web, App}
 
-type BordaResult = Vec<(Uuid, u32)>;
+pub async fn http_server(module_name: &'static str) -> std::io::Result<()> {
 
-/// I initially thought that votes casted values with 0 should be treated
-/// as a white ballot (not voting), but this slight change will change the bahaviour of the
-/// calculation....
-/// If people do not give any number to a policy, the map will not contain that entry. In this type
-/// of borda count, those entries will be 'counted down', in other terms, the borda count value
-/// will be 0.
-pub async fn calculate(info: VoteData) -> BordaResult {
-    let mut result: HashMap<Uuid, u32> = info
-        .policies
-        .iter()
-        .map(|uid| (uid.to_owned(), 0u32))
-        .collect();
+    let port = env::var("PORT").expect("env var `PORT` requied to run.");
+    let address = format!("0.0.0.0:{}", port);
 
-    let stripped = info.only_policy_voting();
+    HttpServer::new(move || {
+        // TODO: change this
+        let cors = Cors::permissive();
 
-    let vote_vec = stripped
-        .iter()
-        .map(|(_, vote)| {
-            vote.iter()
-                .map(|(u, v)| (u.to_owned(), *v))
-                .collect::<Vec<(Uuid, f64)>>()
-        })
-        .collect::<Vec<Vec<(Uuid, f64)>>>();
+        App::new()
+            .wrap(middleware::Logger::default())
+            .wrap(cors)
+            .service(web::scope(module_name).service(hello).service(rpc))
+    })
+    .bind(&address)?
+    .run()
+    .await
+}
 
-    // TODO: I can parrallize this, sorting and putting point can be done asyncly
-    for vote in vote_vec {
-        // first sort the votes
-        let mut sorted = vote.to_owned();
-        sorted.sort_by(|(_ida, a), (_idb, b)| b.partial_cmp(a).unwrap());
+#[get("/hello/")]
+async fn hello() -> impl Responder {
+    "hello"
+}
 
-        // let mut order: Vec<&Uuid> = vote.iter().map(|(uid, _)| uid).collect();
-        let order: Vec<&Uuid> = sorted.iter().map(|(uid, _)| uid).collect();
-
-        println!("{:?}", &order);
-
-        for (i, uid) in order.iter().enumerate() {
-            let point = (info.policies.len() - i) as u32;
-            let current = result.get_mut(uid).expect("unknown policy found in vote");
-            *current += point;
-        }
-    }
-
-    let mut sorted = result.into_iter().collect::<Vec<(Uuid, u32)>>();
-
-    sorted.sort_by(|(_, a), (_, b)| b.cmp(a));
-
-    sorted
+// TODO: we want to spit a function like this interchangeably
+// so we can have different 'calculates'
+#[post("/rpc/")]
+async fn rpc(rpc: web::Json<JsonRPCRequest>) -> impl Responder {
+    let rpc = rpc.into_inner();
+    let mut response = JsonRPCResponse::new(&rpc.id());
+    let result = calculate(rpc.vote_info()).await;
+    response.result(&json!(result));
+    web::Json(response)
 }
 
 #[cfg(test)]
