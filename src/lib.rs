@@ -9,9 +9,9 @@ type BordaResult = Vec<(Uuid, u32)>;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct BordaIntermediate {
-    #[serde(alias = "voterID")]
+    #[serde(rename = "voterID")]
     pub voter_id: Uuid,
-    #[serde(alias = "voterPt")]
+    #[serde(rename = "voterPt")]
     pub voter_pt: HashMap<Uuid, u32>,
 }
 
