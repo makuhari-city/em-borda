@@ -1,8 +1,28 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use uuid::Uuid;
 use vote::VoteData;
 
 type BordaResult = Vec<(Uuid, u32)>;
+
+// type BordaIntermediate = Vec<(Uuid, HashMap<Uuid, u32>)>;
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct BordaIntermediate {
+    #[serde(alias = "voterID")]
+    pub voter_id: Uuid,
+    #[serde(alias = "voterPt")]
+    pub voter_pt: HashMap<Uuid, u32>,
+}
+
+impl BordaIntermediate {
+    fn new(id: &Uuid, pts: &HashMap<Uuid, u32>) -> Self {
+        Self {
+            voter_id: id.to_owned(),
+            voter_pt: pts.to_owned(),
+        }
+    }
+}
 
 /// I initially thought that votes casted values with 0 should be treated
 /// as a white ballot (not voting), but this slight change will change the bahaviour of the
@@ -10,7 +30,7 @@ type BordaResult = Vec<(Uuid, u32)>;
 /// If people do not give any number to a policy, the map will not contain that entry. In this type
 /// of borda count, those entries will be 'counted down', in other terms, the borda count value
 /// will be 0.
-pub async fn calculate(info: VoteData) -> BordaResult {
+pub async fn calculate(info: VoteData) -> (Vec<BordaIntermediate>, BordaResult) {
     let mut result: HashMap<Uuid, u32> = info
         .policies
         .iter()
@@ -21,15 +41,19 @@ pub async fn calculate(info: VoteData) -> BordaResult {
 
     let vote_vec = stripped
         .iter()
-        .map(|(_, vote)| {
-            vote.iter()
+        .map(|(src, vote)| {
+            let votes = vote
+                .iter()
                 .map(|(u, v)| (u.to_owned(), *v))
-                .collect::<Vec<(Uuid, f64)>>()
+                .collect::<Vec<(Uuid, f64)>>();
+            (src.to_owned(), votes)
         })
-        .collect::<Vec<Vec<(Uuid, f64)>>>();
+        .collect::<HashMap<Uuid, Vec<(Uuid, f64)>>>();
+
+    let mut intermediate = Vec::new();
 
     // TODO: I can parrallize this, sorting and putting point can be done asyncly
-    for vote in vote_vec {
+    for (src, vote) in vote_vec {
         // first sort the votes
         let mut sorted = vote.to_owned();
         sorted.sort_by(|(_ida, a), (_idb, b)| b.partial_cmp(a).unwrap());
@@ -39,18 +63,24 @@ pub async fn calculate(info: VoteData) -> BordaResult {
 
         println!("{:?}", &order);
 
+        let mut user_borda: HashMap<Uuid, u32> = HashMap::new();
         for (i, uid) in order.iter().enumerate() {
             let point = (info.policies.len() - i) as u32;
+            user_borda.insert(*uid.to_owned(), point);
             let current = result.get_mut(uid).expect("unknown policy found in vote");
             *current += point;
         }
+
+        let int = BordaIntermediate::new(&src, &user_borda);
+
+        intermediate.push(int);
     }
 
     let mut sorted = result.into_iter().collect::<Vec<(Uuid, u32)>>();
 
     sorted.sort_by(|(_, a), (_, b)| b.cmp(a));
 
-    sorted
+    (intermediate, sorted)
 }
 
 #[cfg(test)]
