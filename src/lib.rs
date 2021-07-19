@@ -67,8 +67,10 @@ pub async fn calculate(info: VoteData) -> (Vec<BordaIntermediate>, BordaResult) 
         for (i, uid) in order.iter().enumerate() {
             let point = (info.policies.len() - i) as u32;
             user_borda.insert(*uid.to_owned(), point);
-            let current = result.get_mut(uid).expect("unknown policy found in vote");
-            *current += point;
+            match result.get_mut(uid) {
+                Some(c) => *c += point,
+                None => {}
+            }
         }
 
         let int = BordaIntermediate::new(&src, &user_borda);
