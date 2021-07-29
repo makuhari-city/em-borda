@@ -2083,7 +2083,7 @@ checksum = "5fecdca9a5291cc2b8dcf7dc02453fee791a280f3743cb0905f8822ae463b3fe"
 [[package]]
 name = "vote"
 version = "0.1.0"
-source = "git+https://github.com/makuhari-city/vote?rev=6a6c12ce81b16317b44f3c16b24fee9b1939701b#6a6c12ce81b16317b44f3c16b24fee9b1939701b"
+source = "git+https://github.com/makuhari-city/vote?rev=6910dcbd80a132f1a9daa94c27219bdd28c6d827#6910dcbd80a132f1a9daa94c27219bdd28c6d827"
 dependencies = [
  "actix",
  "actix-cors",
